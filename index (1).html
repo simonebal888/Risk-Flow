@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RiskFlow · GenAI per il Risk Management Assicurativo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Spline+Sans:wght@400;500;600;700&family=Spline+Sans+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0d1b2a;
+    --ink-soft:#3a4a5c;
+    --paper:#f4f1ea;
+    --paper-2:#ece7db;
+    --card:#fffdf8;
+    --line:#d9d2c4;
+    --accent:#c44536;      /* terracotta */
+    --accent-2:#1b4965;    /* deep teal */
+    --gold:#b08d57;
+    --green:#3a7d44;
+    --amber:#d98c1f;
+    --red:#c44536;
+    --shadow:0 1px 2px rgba(13,27,42,.06),0 8px 24px rgba(13,27,42,.08);
+    --mono:'Spline Sans Mono',monospace;
+    --sans:'Spline Sans',sans-serif;
+    --serif:'Fraunces',serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:var(--sans);
+    background:var(--paper);
+    color:var(--ink);
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+    background-image:radial-gradient(circle at 1px 1px, rgba(13,27,42,.04) 1px, transparent 0);
+    background-size:28px 28px;
+  }
+  /* ---------- TOP BAR ---------- */
+  header{
+    position:sticky;top:0;z-index:50;
+    display:flex;align-items:center;justify-content:space-between;
+    padding:14px 28px;
+    background:rgba(244,241,234,.85);
+    backdrop-filter:blur(12px);
+    border-bottom:1px solid var(--line);
+  }
+  .brand{display:flex;align-items:center;gap:12px}
+  .logo{
+    width:38px;height:38px;border-radius:10px;
+    background:linear-gradient(135deg,var(--accent-2),var(--accent));
+    display:grid;place-items:center;color:#fff;
+    font-family:var(--serif);font-weight:700;font-size:20px;
+    box-shadow:var(--shadow);
+  }
+  .brand h1{font-family:var(--serif);font-size:21px;font-weight:600;letter-spacing:-.3px}
+  .brand span{display:block;font-size:11px;color:var(--ink-soft);font-weight:500;letter-spacing:.5px;text-transform:uppercase}
+  .topmeta{display:flex;align-items:center;gap:18px;font-size:13px;color:var(--ink-soft)}
+  .pill{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border:1px solid var(--line);border-radius:99px;background:var(--card);font-size:12px;font-weight:500}
+  .dot{width:7px;height:7px;border-radius:99px;background:var(--green);box-shadow:0 0 0 3px rgba(58,125,68,.18)}
+
+  /* ---------- LAYOUT ---------- */
+  .shell{display:grid;grid-template-columns:236px 1fr;min-height:calc(100vh - 67px)}
+  nav{border-right:1px solid var(--line);padding:22px 16px;background:rgba(255,253,248,.5)}
+  .navlabel{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--gold);font-weight:600;margin:18px 10px 8px}
+  .navitem{
+    display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:9px;
+    font-size:14px;font-weight:500;color:var(--ink-soft);cursor:pointer;
+    transition:.15s;margin-bottom:2px;border:1px solid transparent;
+  }
+  .navitem:hover{background:var(--paper-2);color:var(--ink)}
+  .navitem.active{background:var(--card);color:var(--ink);border-color:var(--line);box-shadow:var(--shadow)}
+  .navitem.active .ico{color:var(--accent)}
+  .ico{width:18px;height:18px;flex:none;color:var(--ink-soft)}
+  main{padding:30px 36px 60px;max-width:1100px}
+
+  .view{display:none;animation:rise .5s cubic-bezier(.2,.7,.3,1)}
+  .view.show{display:block}
+  @keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+
+  .page-h{margin-bottom:6px;font-family:var(--serif);font-size:30px;font-weight:600;letter-spacing:-.5px}
+  .page-sub{color:var(--ink-soft);font-size:15px;margin-bottom:28px;max-width:680px}
+
+  /* ---------- CARDS / GRID ---------- */
+  .grid{display:grid;gap:18px}
+  .g3{grid-template-columns:repeat(3,1fr)}
+  .g2{grid-template-columns:1.3fr .9fr}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;box-shadow:var(--shadow)}
+  .card.tight{padding:16px}
+  .kpi-label{font-size:12px;text-transform:uppercase;letter-spacing:.6px;color:var(--ink-soft);font-weight:600}
+  .kpi-val{font-family:var(--serif);font-size:34px;font-weight:600;margin-top:6px;letter-spacing:-1px}
+  .kpi-sub{font-size:12px;margin-top:4px;font-weight:500}
+  .up{color:var(--green)} .down{color:var(--red)} .warn{color:var(--amber)}
+
+  .ratio-track{height:9px;border-radius:99px;background:var(--paper-2);margin-top:14px;overflow:hidden}
+  .ratio-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--accent-2),var(--green))}
+
+  /* ---------- RAF TABLE ---------- */
+  table{width:100%;border-collapse:collapse;font-size:14px}
+  th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--ink-soft);font-weight:600;padding:11px 12px;border-bottom:1px solid var(--line)}
+  td{padding:13px 12px;border-bottom:1px solid var(--paper-2)}
+  tr:last-child td{border-bottom:none}
+  .badge{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:4px 10px;border-radius:99px}
+  .b-green{background:rgba(58,125,68,.12);color:var(--green)}
+  .b-amber{background:rgba(217,140,31,.14);color:var(--amber)}
+  .b-red{background:rgba(196,69,54,.13);color:var(--red)}
+  .mono{font-family:var(--mono)}
+
+  /* ---------- REPORT DOC ---------- */
+  .report-wrap{display:grid;grid-template-columns:1fr 320px;gap:22px;align-items:start}
+  .doc{background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);overflow:hidden}
+  .doc-head{padding:20px 26px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:flex-start;background:linear-gradient(180deg,var(--card),var(--paper))}
+  .doc-title{font-family:var(--serif);font-size:22px;font-weight:600}
+  .doc-meta{font-size:12px;color:var(--ink-soft);margin-top:3px}
+  .doc-body{padding:8px 30px 30px;min-height:340px}
+  .doc-body h3{font-family:var(--serif);font-size:17px;margin:24px 0 8px;font-weight:600;color:var(--accent-2)}
+  .doc-body p{font-size:14.5px;color:var(--ink);margin-bottom:12px;line-height:1.65}
+  .ai-tag{display:inline-flex;align-items:center;gap:5px;font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--accent);background:rgba(196,69,54,.08);padding:2px 8px;border-radius:6px;vertical-align:middle;margin-left:8px}
+
+  .typing p{opacity:0}
+  .typing p.reveal{animation:fade .4s forwards}
+  @keyframes fade{to{opacity:1}}
+
+  /* side panel */
+  .side h4{font-size:12px;text-transform:uppercase;letter-spacing:.6px;color:var(--gold);font-weight:600;margin-bottom:12px}
+  .src{font-size:13px;padding:11px 13px;border:1px solid var(--line);border-radius:10px;margin-bottom:9px;background:var(--card);display:flex;gap:10px;align-items:flex-start}
+  .src .num{font-family:var(--mono);font-size:11px;color:#fff;background:var(--accent-2);min-width:20px;height:20px;border-radius:6px;display:grid;place-items:center;font-weight:600}
+  .src b{font-weight:600}.src small{color:var(--ink-soft)}
+
+  /* ---------- BUTTONS ---------- */
+  .btn{display:inline-flex;align-items:center;gap:8px;font-family:var(--sans);font-size:14px;font-weight:600;padding:11px 18px;border-radius:10px;border:1px solid var(--ink);background:var(--ink);color:#fff;cursor:pointer;transition:.15s}
+  .btn:hover{transform:translateY(-1px);box-shadow:var(--shadow)}
+  .btn.ghost{background:transparent;color:var(--ink);border-color:var(--line)}
+  .btn.ghost:hover{background:var(--card)}
+  .btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+  .btn-row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:24px}
+
+  /* ---------- UPLOAD ---------- */
+  .upload-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:8px}
+  .drop{
+    border:1.5px dashed var(--line);border-radius:14px;padding:22px 20px;background:var(--card);
+    cursor:pointer;transition:.18s;text-align:center;position:relative
+  }
+  .drop:hover{border-color:var(--accent-2);background:#fff}
+  .drop.over{border-color:var(--accent);background:rgba(196,69,54,.04)}
+  .drop.filled{border-style:solid;border-color:var(--green);background:rgba(58,125,68,.04);text-align:left}
+  .drop .dlabel{font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--gold);font-weight:600;margin-bottom:8px}
+  .drop .dhint{font-size:13px;color:var(--ink-soft);font-weight:500}
+  .drop .dicon{width:30px;height:30px;color:var(--accent-2);margin-bottom:8px}
+  .drop input{display:none}
+  .filelist{margin-top:10px;display:flex;flex-direction:column;gap:7px}
+  .filerow{display:flex;align-items:center;gap:9px;font-size:13px;background:#fff;border:1px solid var(--line);border-radius:8px;padding:8px 11px}
+  .filerow .fi{width:16px;height:16px;color:var(--green);flex:none}
+  .filerow b{font-weight:600;font-family:var(--mono);font-size:12.5px}
+  .filerow small{color:var(--ink-soft);margin-left:auto}
+  .filerow .x{cursor:pointer;color:var(--ink-soft);font-weight:700;padding:0 4px}
+  .filerow .x:hover{color:var(--red)}
+  .quick{display:flex;gap:7px;flex-wrap:wrap;margin-top:12px;justify-content:center}
+  .drop.filled .quick{justify-content:flex-start}
+  .upload-note{font-size:12px;color:var(--ink-soft);margin:4px 0 20px;display:flex;gap:7px;align-items:flex-start}
+
+  /* diff highlight */
+  .diff{background:rgba(217,140,31,.18);border-radius:4px;padding:0 3px;font-weight:600}
+  .diff-old{text-decoration:line-through;color:var(--ink-soft);opacity:.7;margin-right:5px;font-weight:400}
+  .changelog{margin-top:6px}
+  .changelog .ci{display:flex;gap:9px;font-size:13px;padding:9px 12px;border:1px solid var(--line);border-radius:9px;margin-bottom:7px;background:var(--card)}
+  .changelog .ci .cbadge{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;padding:2px 7px;border-radius:5px;height:fit-content;white-space:nowrap}
+  .cb-upd{background:rgba(217,140,31,.16);color:var(--amber)}
+  .cb-new{background:rgba(58,125,68,.14);color:var(--green)}
+
+  .report-tabs{display:flex;gap:8px;margin-bottom:22px;flex-wrap:wrap}
+  .rtab{padding:9px 16px;border-radius:99px;border:1px solid var(--line);background:var(--card);font-size:13.5px;font-weight:600;cursor:pointer;transition:.15s;color:var(--ink-soft)}
+  .rtab:hover{border-color:var(--gold)}
+  .rtab.active{background:var(--accent-2);color:#fff;border-color:var(--accent-2)}
+
+  /* ---------- NLP ---------- */
+  .nlp-input{width:100%;min-height:120px;font-family:var(--sans);font-size:14px;padding:15px;border:1px solid var(--line);border-radius:12px;background:var(--card);resize:vertical;color:var(--ink);line-height:1.6}
+  .nlp-input:focus{outline:2px solid var(--accent-2);outline-offset:1px}
+  .sample-chips{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0 20px}
+  .chip{font-size:12.5px;padding:7px 13px;border-radius:99px;border:1px dashed var(--line);background:transparent;cursor:pointer;font-weight:500;color:var(--ink-soft);transition:.15s}
+  .chip:hover{border-style:solid;border-color:var(--accent-2);color:var(--ink)}
+
+  .req-card{border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin-bottom:12px;background:var(--card);box-shadow:var(--shadow);opacity:0;transform:translateY(10px)}
+  .req-card.in{animation:rise .45s forwards}
+  .req-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+  .req-id{font-family:var(--mono);font-size:12px;color:var(--accent);font-weight:500}
+  .req-card h4{font-size:15px;font-weight:600;margin-bottom:6px}
+  .req-card p{font-size:13.5px;color:var(--ink-soft);margin-bottom:12px}
+  .map{display:flex;align-items:center;gap:8px;font-size:12.5px;flex-wrap:wrap}
+  .map .arrow{color:var(--gold)}
+  .tag{font-size:11.5px;font-weight:600;padding:4px 9px;border-radius:7px;background:var(--paper-2);color:var(--ink-soft)}
+  .tag.hit{background:rgba(27,73,101,.1);color:var(--accent-2)}
+
+  /* scanner */
+  .scanline{height:3px;background:linear-gradient(90deg,transparent,var(--accent),transparent);border-radius:99px;animation:scan 1.1s linear infinite}
+  @keyframes scan{0%{opacity:.3}50%{opacity:1}100%{opacity:.3}}
+  .loading{display:flex;align-items:center;gap:12px;font-size:14px;color:var(--ink-soft);font-weight:500;padding:8px 0}
+  .spin{width:18px;height:18px;border:2px solid var(--line);border-top-color:var(--accent);border-radius:99px;animation:rot .7s linear infinite}
+  @keyframes rot{to{transform:rotate(360deg)}}
+
+  .note{font-size:12px;color:var(--ink-soft);margin-top:8px;display:flex;gap:7px;align-items:flex-start}
+  footer{padding:20px 36px;border-top:1px solid var(--line);font-size:12px;color:var(--ink-soft);display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
+  .demo-banner{background:var(--accent-2);color:#fff;font-size:12.5px;text-align:center;padding:7px;font-weight:500;letter-spacing:.2px}
+
+  @media(max-width:880px){
+    .shell{grid-template-columns:1fr}
+    nav{display:none}
+    .g3,.g2{grid-template-columns:1fr}
+    .report-wrap{grid-template-columns:1fr}
+    main{padding:22px}
+  }
+</style>
+</head>
+<body>
+
+<div class="demo-banner">⚙️ Ambiente DEMO · Dati simulati a scopo dimostrativo · Le elaborazioni GenAI sono pre-impostate</div>
+
+<header>
+  <div class="brand">
+    <div class="logo">R</div>
+    <div>
+      <h1>RiskFlow</h1>
+      <span>GenAI · Solvency II Suite</span>
+    </div>
+  </div>
+  <div class="topmeta">
+    <span class="pill"><span class="dot"></span> Modelli sincronizzati · Q4 2025</span>
+    <span class="pill">CRO · M. Bianchi</span>
+  </div>
+</header>
+
+<div class="shell">
+  <nav>
+    <div class="navlabel">Panoramica</div>
+    <div class="navitem active" data-view="dash">
+      <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
+      Dashboard rischi
+    </div>
+    <div class="navitem" data-view="raf">
+      <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="m7 14 3-3 3 3 5-5"/></svg>
+      Risk Appetite (RAF)
+    </div>
+    <div class="navlabel">GenAI</div>
+    <div class="navitem" data-view="report">
+      <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h6"/></svg>
+      Bozze reportistica
+    </div>
+    <div class="navitem" data-view="nlp">
+      <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M8 9h8M8 13h5"/></svg>
+      Analisi normativa
+    </div>
+  </nav>
+
+  <main>
+    <!-- ============ DASHBOARD ============ -->
+    <section class="view show" id="dash">
+      <h2 class="page-h">Dashboard rischi</h2>
+      <p class="page-sub">Sintesi quantitativa dei modelli interni e standard formula. I valori alimentano automaticamente le bozze di SFCR, RAF e ORSA.</p>
+
+      <div class="grid g3" style="margin-bottom:18px">
+        <div class="card">
+          <div class="kpi-label">Solvency Ratio</div>
+          <div class="kpi-val">168%</div>
+          <div class="kpi-sub down">▼ 7 p.p. vs Q3 2025</div>
+          <div class="ratio-track"><div class="ratio-fill" style="width:84%"></div></div>
+        </div>
+        <div class="card">
+          <div class="kpi-label">SCR totale</div>
+          <div class="kpi-val">€ 1.24<small style="font-size:16px"> mld</small></div>
+          <div class="kpi-sub up">▲ €38 mln per rischio mercato</div>
+          <div class="ratio-track"><div class="ratio-fill" style="width:62%;background:linear-gradient(90deg,var(--accent-2),var(--amber))"></div></div>
+        </div>
+        <div class="card">
+          <div class="kpi-label">MCR coverage</div>
+          <div class="kpi-val">412%</div>
+          <div class="kpi-sub up">Ampiamente sopra soglia</div>
+          <div class="ratio-track"><div class="ratio-fill" style="width:95%"></div></div>
+        </div>
+      </div>
+
+      <div class="grid g2">
+        <div class="card">
+          <div class="kpi-label" style="margin-bottom:14px">Composizione SCR per modulo</div>
+          <div id="barchart"></div>
+        </div>
+        <div class="card">
+          <div class="kpi-label" style="margin-bottom:6px">Scostamenti rilevati dall'IA</div>
+          <p style="font-size:13px;color:var(--ink-soft);margin-bottom:14px">3 segnalazioni automatiche pronte per il commento</p>
+          <div class="src"><span class="num">1</span><div><b>Rischio spread in crescita</b><br><small>+18% su esposizione corporate BBB. Vicino al limite di tolleranza RAF.</small></div></div>
+          <div class="src"><span class="num">2</span><div><b>Lapse rate sopra atteso</b><br><small>Riscatti vita +2,3% rispetto al best estimate trimestrale.</small></div></div>
+          <div class="src"><span class="num">3</span><div><b>Duration gap A-L</b><br><small>Gap salito a 1,4 anni; impatto su rischio tasso da monitorare.</small></div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ RAF ============ -->
+    <section class="view" id="raf">
+      <h2 class="page-h">Risk Appetite Framework</h2>
+      <p class="page-sub">Monitoraggio degli indicatori rispetto a soglie di tolleranza e limiti. Gli scostamenti vengono evidenziati e tradotti in commento testuale dalla GenAI.</p>
+      <div class="card tight">
+        <table>
+          <thead><tr><th>Metrica</th><th>Valore attuale</th><th>Target</th><th>Tolleranza</th><th>Limite</th><th>Stato</th></tr></thead>
+          <tbody>
+            <tr><td><b>Solvency Ratio</b></td><td class="mono">168%</td><td class="mono">≥ 170%</td><td class="mono">160%</td><td class="mono">140%</td><td><span class="badge b-amber">● Tolleranza</span></td></tr>
+            <tr><td><b>SCR Rischio Mercato</b></td><td class="mono">€512 mln</td><td class="mono">≤ €500 mln</td><td class="mono">€530 mln</td><td class="mono">€560 mln</td><td><span class="badge b-amber">● Tolleranza</span></td></tr>
+            <tr><td><b>SCR Rischio Sottoscrizione Vita</b></td><td class="mono">€288 mln</td><td class="mono">≤ €310 mln</td><td class="mono">€330 mln</td><td class="mono">€350 mln</td><td><span class="badge b-green">● Nel target</span></td></tr>
+            <tr><td><b>Liquidity Coverage</b></td><td class="mono">143%</td><td class="mono">≥ 120%</td><td class="mono">110%</td><td class="mono">100%</td><td><span class="badge b-green">● Nel target</span></td></tr>
+            <tr><td><b>Concentrazione single-name</b></td><td class="mono">4,8%</td><td class="mono">≤ 4,0%</td><td class="mono">5,0%</td><td class="mono">6,0%</td><td><span class="badge b-red">● Oltre soglia</span></td></tr>
+            <tr><td><b>Reputational risk score</b></td><td class="mono">2,1 / 5</td><td class="mono">≤ 2,5</td><td class="mono">3,0</td><td class="mono">3,5</td><td><span class="badge b-green">● Nel target</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="note">⚑ Gli indicatori in <b>tolleranza</b> o <b>oltre soglia</b> generano automaticamente una proposta di commento nella sezione "Bozze reportistica".</p>
+    </section>
+
+    <!-- ============ REPORT ============ -->
+    <section class="view" id="report">
+      <h2 class="page-h">Aggiornamento bozze di reportistica</h2>
+      <p class="page-sub">Carica il report dell'esercizio precedente come <b>template di riferimento</b> e i <b>nuovi dati</b> (Excel, output dei modelli). La GenAI riusa struttura e stile del documento esistente, aggiorna i valori quantitativi con i nuovi input e riscrive i commenti evidenziando gli scostamenti rispetto al Risk Appetite Framework.</p>
+
+      <div class="report-tabs">
+        <button class="rtab active" data-doc="sfcr">SFCR</button>
+        <button class="rtab" data-doc="raf">RAF Report</button>
+        <button class="rtab" data-doc="orsa">ORSA Report</button>
+      </div>
+
+      <div class="upload-grid">
+        <div class="drop" id="dropTpl">
+          <input type="file" id="fileTpl" accept=".docx,.pdf,.doc">
+          <svg class="dicon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="margin:0 auto 8px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 15h6M9 18h4"/></svg>
+          <div class="dlabel">1 · Report di riferimento</div>
+          <div class="dhint">Trascina qui il report dell'anno scorso<br>(.docx / .pdf) o clicca per selezionare</div>
+          <div class="quick"><button class="chip" data-demo-tpl>📄 Usa esempio: SFCR_2024.docx</button></div>
+        </div>
+
+        <div class="drop" id="dropData">
+          <input type="file" id="fileData" accept=".xlsx,.xls,.csv" multiple>
+          <svg class="dicon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="margin:0 auto 8px"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>
+          <div class="dlabel">2 · Nuovi dati (output modelli)</div>
+          <div class="dhint">Trascina qui i file Excel / CSV<br>con i risultati aggiornati</div>
+          <div class="quick"><button class="chip" data-demo-data>📊 Usa esempio: 2 file dati Q4 2025</button></div>
+        </div>
+      </div>
+      <p class="upload-note">🔒 I file restano nel browser: questa demo non li carica su alcun server. L'aggiornamento mostrato è pre-impostato a scopo dimostrativo.</p>
+
+      <div class="btn-row">
+        <button class="btn" id="genBtn" disabled><svg class="ico" style="width:16px;height:16px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 3 1.9 5.8L20 10l-6.1 1.2L12 17l-1.9-5.8L4 10l6.1-1.2z"/></svg> Aggiorna report con GenAI</button>
+        <button class="btn ghost" id="clearBtn">Reimposta</button>
+      </div>
+
+      <div class="report-wrap">
+        <div class="doc">
+          <div class="doc-head">
+            <div>
+              <div class="doc-title" id="docTitle">Solvency & Financial Condition Report</div>
+              <div class="doc-meta" id="docMeta">SFCR · in attesa di template e dati</div>
+            </div>
+            <span class="badge b-amber" id="docStatus">In attesa di upload</span>
+          </div>
+          <div class="doc-body" id="docBody">
+            <p style="color:var(--ink-soft)">Carica un <b>report di riferimento</b> e i <b>nuovi dati</b>, poi premi <b>“Aggiorna report con GenAI”</b>. Il documento verrà riscritto mantenendo la struttura del template e sostituendo i valori con i nuovi input.</p>
+          </div>
+        </div>
+
+        <div class="side">
+          <div class="card">
+            <h4>Pipeline di aggiornamento</h4>
+            <div class="src"><span class="num">1</span><div><b>Template caricato</b><br><small id="sTpl">— nessun file</small></div></div>
+            <div class="src"><span class="num">2</span><div><b>Dati caricati</b><br><small id="sData">— nessun file</small></div></div>
+            <div class="src"><span class="num">3</span><div><b>Estrazione valori</b><br><small>SCR, Solvency Ratio, lapse, spread</small></div></div>
+            <div class="src"><span class="num">4</span><div><b>Riscrittura commenti</b><br><small>Allineati agli scostamenti RAF</small></div></div>
+            <p class="note" style="margin-top:14px">🔒 La bozza è una proposta: richiede revisione e validazione della funzione Risk Management prima dell'invio all'IVASS.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ NLP ============ -->
+    <section class="view" id="nlp">
+      <h2 class="page-h">Analisi della normativa</h2>
+      <p class="page-sub">Strumenti NLP analizzano nuove circolari, consultazioni o linee guida regolamentari, estraggono i requisiti d'impatto per la compagnia e li mappano sui processi interni.</p>
+
+      <textarea class="nlp-input" id="nlpInput" placeholder="Incolla qui il testo di una circolare IVASS, una consultazione EIOPA o una linea guida regolamentare…"></textarea>
+      <div class="sample-chips">
+        <span style="font-size:12px;color:var(--ink-soft);align-self:center;margin-right:4px">Esempi:</span>
+        <button class="chip" data-sample="0">Circolare IVASS · governance IT</button>
+        <button class="chip" data-sample="1">Consultazione EIOPA · ESG/clima</button>
+        <button class="chip" data-sample="2">Linea guida · ORSA forward-looking</button>
+      </div>
+      <div class="btn-row">
+        <button class="btn" id="nlpBtn"><svg class="ico" style="width:16px;height:16px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg> Analizza con NLP</button>
+      </div>
+
+      <div id="nlpOut"></div>
+    </section>
+  </main>
+</div>
+
+<footer>
+  <span>RiskFlow · Demo concept per Risk Management assicurativo (Solvency II)</span>
+  <span>SFCR · RAF · ORSA — bozze assistite da GenAI / NLP</span>
+</footer>
+
+<script>
+/* ---------- NAV ---------- */
+const items=document.querySelectorAll('.navitem');
+const views=document.querySelectorAll('.view');
+items.forEach(it=>it.addEventListener('click',()=>{
+  items.forEach(i=>i.classList.remove('active'));
+  it.classList.add('active');
+  const v=it.dataset.view;
+  views.forEach(s=>s.classList.toggle('show',s.id===v));
+}));
+
+/* ---------- SIMPLE BAR CHART ---------- */
+const bars=[
+  ['Mercato',512,'var(--accent)'],
+  ['Sottoscr. Vita',288,'var(--accent-2)'],
+  ['Sottoscr. Danni',196,'var(--gold)'],
+  ['Controparte',141,'var(--green)'],
+  ['Operativo',103,'var(--amber)']
+];
+const max=Math.max(...bars.map(b=>b[1]));
+document.getElementById('barchart').innerHTML=bars.map(b=>`
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:11px">
+    <div style="width:120px;font-size:12.5px;font-weight:500;color:var(--ink-soft)">${b[0]}</div>
+    <div style="flex:1;background:var(--paper-2);border-radius:7px;height:24px;overflow:hidden">
+      <div style="height:100%;width:0;background:${b[2]};border-radius:7px;transition:width 1s cubic-bezier(.2,.7,.3,1);display:flex;align-items:center;justify-content:flex-end;padding-right:8px;color:#fff;font-size:11px;font-weight:600;font-family:var(--mono)" data-w="${b[1]/max*100}">€${b[1]}M</div>
+    </div>
+  </div>`).join('');
+function animateBars(){document.querySelectorAll('#barchart [data-w]').forEach(el=>{setTimeout(()=>el.style.width=el.dataset.w+'%',120)})}
+animateBars();
+
+/* ---------- REPORT UPDATE FROM TEMPLATE + DATA ---------- */
+/* Nei testi: <d>vecchio|nuovo</d> = valore aggiornato (mostrato vecchio barrato → nuovo evidenziato) */
+const docs={
+  sfcr:{
+    title:'Solvency & Financial Condition Report',
+    tpl:'SFCR_2024.docx',
+    changelog:[
+      ['upd','SCR totale aggiornato da €1,20 mld a €1,24 mld in base all\'output del modello interno (file Q4).'],
+      ['upd','Solvency Ratio ricalcolato: 175% → 168% (−7 p.p.).'],
+      ['new','Aggiunto commento su lapse rate +2,3% non presente nel report precedente.'],
+      ['upd','Capitolo C.1 riscritto per riflettere l\'aumento dello spread corporate BBB.']
+    ],
+    body:[
+      ['h3','C. Profilo di rischio'],
+      ['p','Nel corso dell\'esercizio <d>2024|2025</d> il profilo di rischio della Compagnia si è mantenuto coerente con la strategia approvata, con il Requisito Patrimoniale di Solvibilità (SCR) pari a <d>€1,20 miliardi|€1,24 miliardi</d>, in <d>linea con|aumento di €38 milioni rispetto a</d> il periodo precedente. La componente predominante resta il rischio di mercato (<d>€474 milioni|€512 milioni</d>), trainato dalla crescita dell\'esposizione spread sul comparto corporate.'],
+      ['h3','C.1 Rischio di mercato'],
+      ['p','Il modulo registra un incremento del <d>6%|18%</d> dell\'esposizione spread su titoli corporate con rating BBB. Tale dinamica <d>resta ampiamente entro i limiti|avvicina l\'indicatore alla soglia di tolleranza</d> definita dal Risk Appetite Framework, pur restando entro il limite. La funzione Risk Management ha avviato un monitoraggio rafforzato e valutazioni di de-risking selettivo.'],
+      ['h3','C.3 Rischio di sottoscrizione vita'],
+      ['p','Si segnala un tasso di riscatto (lapse) superiore di <d>0,8|2,3</d> punti percentuali rispetto al best estimate trimestrale, attribuibile alle condizioni di mercato e alla concorrenza sui prodotti a premio unico. L\'impatto sul Best Estimate delle riserve tecniche è stato recepito nel ricalcolo dell\'SCR.'],
+      ['h3','E. Gestione del capitale'],
+      ['p','Il Solvency Ratio si attesta al <d>175%|168%</d>, in <d>crescita|flessione</d> di <d>3|7</d> punti percentuali, e la copertura del MCR resta solida al <d>438%|412%</d>. La Compagnia dispone di fondi propri ammissibili di elevata qualità (prevalentemente Tier 1) sufficienti a coprire i requisiti regolamentari con adeguato margine.']
+    ]
+  },
+  raf:{
+    title:'Risk Appetite Framework — Report di monitoraggio',
+    tpl:'RAF_Q3-2025.docx',
+    changelog:[
+      ['upd','Solvency Ratio passato da fascia "nel target" a "in tolleranza" (170% → 168%).'],
+      ['new','Nuovo scostamento: concentrazione single-name oltre soglia (4,8%).'],
+      ['upd','SCR mercato aggiornato a €512 mln dai nuovi output di modello.']
+    ],
+    body:[
+      ['h3','1. Sintesi degli scostamenti'],
+      ['p','Il monitoraggio trimestrale evidenzia <d>1 indicatore|2 indicatori</d> in fascia di tolleranza e <d>nessun indicatore|1 indicatore</d> oltre soglia. Nessun limite hard è stato violato. Di seguito i commenti automatici proposti dalla GenAI per ciascun indicatore in attenzione.'],
+      ['h3','2. Solvency Ratio (in tolleranza)'],
+      ['p','Con un valore del <d>170%|168%</d>, l\'indicatore si colloca <d>in linea con|al di sotto del</d> target del 170% ma sopra la soglia di tolleranza del 160%. La flessione riflette la crescita dell\'SCR di mercato. Si raccomanda l\'inserimento nell\'ordine del giorno del prossimo Comitato Rischi per la valutazione di azioni di mitigazione.'],
+      ['h3','3. SCR Rischio di Mercato (in tolleranza)'],
+      ['p','L\'assorbimento di capitale per rischio di mercato pari a <d>€489 milioni|€512 milioni</d> supera il target di €500 milioni, restando entro la tolleranza di €530 milioni. La causa principale è l\'ampliamento dell\'esposizione spread sul portafoglio corporate.'],
+      ['h3','4. Concentrazione single-name (oltre soglia)'],
+      ['p','L\'indicatore di concentrazione si attesta al <d>3,9%|4,8%</d>, <d>entro il target del 4,0%|superando la soglia di tolleranza del 5,0%</d> (entro il limite del 6,0%). È richiesto un piano di rientro formalizzato con orizzonte temporale definito e relativa escalation al Consiglio di Amministrazione.']
+    ]
+  },
+  orsa:{
+    title:'ORSA — Own Risk and Solvency Assessment',
+    tpl:'ORSA_2024.docx',
+    changelog:[
+      ['upd','Orizzonte di pianificazione aggiornato a 2026–2028.'],
+      ['upd','Scenario avverso ricalcolato con i nuovi shock: Solvency Ratio stressato 138%.'],
+      ['new','Aggiunto riferimento alla prossimità al limite RAF del 140% sotto stress.']
+    ],
+    body:[
+      ['h3','1. Valutazione complessiva del fabbisogno di solvibilità'],
+      ['p','La valutazione interna del fabbisogno di solvibilità conferma l\'adeguatezza patrimoniale della Compagnia lungo l\'intero orizzonte di pianificazione (<d>2025–2027|2026–2028</d>). Il fabbisogno complessivo è coerente con il profilo di rischio e tiene conto dei rischi non pienamente catturati dalla standard formula.'],
+      ['h3','2. Proiezioni forward-looking'],
+      ['p','Le proiezioni triennali indicano un Solvency Ratio in graduale recupero verso il <d>178% entro il 2026|175% entro il 2027</d>, in ipotesi di scenario base. La traiettoria sconta la normalizzazione attesa degli spread di credito e l\'effetto delle azioni di de-risking pianificate.'],
+      ['h3','3. Stress test e scenari avversi'],
+      ['p','Nello scenario avverso combinato (shock spread <d>+120bp|+150bp</d>, aumento lapse +20%, calo equity −25%) il Solvency Ratio si ridurrebbe al <d>146%|138%</d>, <d>con margine adeguato sul|prossimo al</d> limite RAF del 140%. Tale risultato attiva la valutazione di management actions, tra cui ribilanciamento del portafoglio e revisione della politica di riassicurazione.'],
+      ['h3','4. Conclusioni del Consiglio'],
+      ['p','Sulla base delle evidenze, il fabbisogno di solvibilità risulta adeguatamente coperto. Il Consiglio prende atto degli scostamenti RAF in fascia di tolleranza e approva il piano di monitoraggio rafforzato proposto dalla funzione Risk Management.']
+    ]
+  }
+};
+let currentDoc='sfcr';
+const docBody=document.getElementById('docBody');
+const docTitle=document.getElementById('docTitle');
+const docMeta=document.getElementById('docMeta');
+const docStatus=document.getElementById('docStatus');
+const genBtn=document.getElementById('genBtn');
+
+/* ----- UPLOAD STATE ----- */
+let hasTpl=false, hasData=false;
+const sTpl=document.getElementById('sTpl'), sData=document.getElementById('sData');
+
+function refreshBtn(){
+  genBtn.disabled=!(hasTpl&&hasData);
+}
+function renderFiles(drop,labelHtml,files,onClear){
+  drop.classList.add('filled');
+  drop.innerHTML=`<div class="dlabel">${labelHtml}</div>
+    <div class="filelist">${files.map(f=>`<div class="filerow">
+      <svg class="fi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg>
+      <b>${f.name}</b><small>${f.size}</small><span class="x" title="rimuovi">✕</span></div>`).join('')}</div>`;
+  drop.querySelectorAll('.x').forEach(x=>x.addEventListener('click',e=>{e.stopPropagation();onClear();}));
+}
+
+/* template upload */
+const dropTpl=document.getElementById('dropTpl'), fileTpl=document.getElementById('fileTpl');
+function setTpl(name){
+  hasTpl=true; sTpl.textContent=name;
+  renderFiles(dropTpl,'1 · Report di riferimento',[{name,size:'caricato'}],resetTplUI);
+  refreshBtn();
+}
+function resetTplUI(){location.reload();}
+dropTpl.addEventListener('click',e=>{if(!dropTpl.classList.contains('filled')&&!e.target.dataset.demoTpl)fileTpl.click();});
+fileTpl.addEventListener('change',()=>{if(fileTpl.files[0])setTpl(fileTpl.files[0].name);});
+
+/* data upload */
+const dropData=document.getElementById('dropData'), fileData=document.getElementById('fileData');
+function setData(list){
+  hasData=true; sData.textContent=list.length+' file';
+  renderFiles(dropData,'2 · Nuovi dati (output modelli)',list,()=>location.reload());
+  refreshBtn();
+}
+dropData.addEventListener('click',e=>{if(!dropData.classList.contains('filled')&&!e.target.dataset.demoData)fileData.click();});
+fileData.addEventListener('change',()=>{
+  if(fileData.files.length){
+    setData([...fileData.files].map(f=>({name:f.name,size:(f.size/1024).toFixed(0)+' KB'})));
+  }
+});
+
+/* demo chips */
+document.querySelector('[data-demo-tpl]')?.addEventListener('click',e=>{e.stopPropagation();setTpl('SFCR_2024.docx');});
+document.querySelector('[data-demo-data]')?.addEventListener('click',e=>{e.stopPropagation();
+  setData([{name:'SCR_modello_interno_Q4-2025.xlsx',size:'214 KB'},{name:'BestEstimate_vita-danni_Q4.xlsx',size:'88 KB'}]);
+});
+
+/* drag & drop visual */
+[dropTpl,dropData].forEach(d=>{
+  d.addEventListener('dragover',e=>{e.preventDefault();d.classList.add('over');});
+  d.addEventListener('dragleave',()=>d.classList.remove('over'));
+  d.addEventListener('drop',e=>{
+    e.preventDefault();d.classList.remove('over');
+    const f=[...e.dataTransfer.files];
+    if(!f.length)return;
+    if(d===dropTpl)setTpl(f[0].name);
+    else setData(f.map(x=>({name:x.name,size:(x.size/1024).toFixed(0)+' KB'})));
+  });
+});
+
+/* tab switching */
+document.querySelectorAll('.rtab').forEach(t=>t.addEventListener('click',()=>{
+  document.querySelectorAll('.rtab').forEach(x=>x.classList.remove('active'));
+  t.classList.add('active');
+  currentDoc=t.dataset.doc;
+  docTitle.textContent=docs[currentDoc].title;
+  docMeta.textContent=docs[currentDoc].title.split('—')[0].trim()+' · in attesa di rigenerazione';
+  resetDoc();
+}));
+function resetDoc(){
+  docBody.className='doc-body';
+  docBody.innerHTML='<p style="color:var(--ink-soft)">Carica un <b>report di riferimento</b> e i <b>nuovi dati</b>, poi premi <b>“Aggiorna report con GenAI”</b>.</p>';
+  docStatus.textContent=hasTpl&&hasData?'Pronto ad aggiornare':'In attesa di upload';
+  docStatus.className=hasTpl&&hasData?'badge b-green':'badge b-amber';
+}
+document.getElementById('clearBtn').addEventListener('click',()=>location.reload());
+
+/* render diff text: <d>old|new</d> */
+function renderDiff(txt){
+  return txt.replace(/<d>(.*?)\|(.*?)<\/d>/g,(m,oldv,newv)=>
+    `<span class="diff-old">${oldv}</span><span class="diff">${newv}</span>`);
+}
+
+genBtn.addEventListener('click',()=>{
+  if(genBtn.disabled)return;
+  genBtn.disabled=true;
+  docStatus.textContent='Aggiornamento…';docStatus.className='badge b-amber';
+  docBody.className='doc-body';
+  docBody.innerHTML='<div class="loading"><span class="spin"></span> Analisi del template '+docs[currentDoc].tpl+', estrazione dei nuovi valori e riscrittura dei capitoli…</div>';
+  setTimeout(()=>{
+    const d=docs[currentDoc];
+    docMeta.textContent=d.title.split('—')[0].trim()+' · basato su '+d.tpl+' · Bozza v2 — aggiornata da RiskFlow GenAI';
+    // changelog block
+    const clog=`<div class="card" style="margin:4px 0 18px;background:var(--paper)">
+      <h4 style="font-size:12px;text-transform:uppercase;letter-spacing:.6px;color:var(--gold);font-weight:600;margin-bottom:10px">Modifiche applicate rispetto al template</h4>
+      <div class="changelog">${d.changelog.map(c=>`<div class="ci"><span class="cbadge ${c[0]==='new'?'cb-new':'cb-upd'}">${c[0]==='new'?'Nuovo':'Aggiornato'}</span><span>${c[1]}</span></div>`).join('')}</div>
+    </div>`;
+    docBody.className='doc-body typing';
+    docBody.innerHTML=clog+d.body.map(([tag,txt],i)=>{
+      if(tag==='h3')return `<h3>${txt}<span class="ai-tag">✦ aggiornato IA</span></h3>`;
+      return `<p data-i="${i}">${renderDiff(txt)}</p>`;
+    }).join('');
+    const ps=docBody.querySelectorAll('p');
+    ps.forEach((p,i)=>setTimeout(()=>p.classList.add('reveal'),i*420));
+    setTimeout(()=>{docStatus.textContent='Bozza aggiornata · da revisionare';docStatus.className='badge b-green';genBtn.disabled=false;},ps.length*420+200);
+  },1700);
+});
+
+/* ---------- NLP ANALYSIS ---------- */
+const samples=[
+  "IVASS, con la presente Circolare, definisce nuove disposizioni in materia di governance dei sistemi informativi e sicurezza cibernetica per le imprese di assicurazione. Le imprese devono nominare un responsabile della sicurezza delle informazioni (CISO), istituire un registro degli incidenti informatici con notifica entro 72 ore, e sottoporre a test di vulnerabilità annuale i sistemi critici. È richiesto l'aggiornamento delle policy di outsourcing dei servizi cloud.",
+  "La presente consultazione EIOPA introduce requisiti relativi all'integrazione dei rischi di sostenibilità e dei fattori climatici nei processi di gestione dei rischi. Le imprese dovranno includere scenari di stress test climatici (transizione e fisico) nella propria ORSA, documentare la materialità dei rischi ESG e definire metriche di esposizione al rischio di transizione sul portafoglio investimenti.",
+  "Le presenti linee guida specificano le aspettative dell'autorità in merito alla natura forward-looking della valutazione interna del rischio (ORSA). Le imprese devono adottare un orizzonte di proiezione minimo triennale, integrare almeno tre scenari avversi coerenti con il piano strategico e assicurare il coinvolgimento documentato dell'organo amministrativo nella definizione delle ipotesi."
+];
+const analyses=[
+  [
+    {id:'REQ-IT-01',title:'Nomina del CISO',desc:'Designazione formale di un responsabile della sicurezza delle informazioni con riporto all\'organo amministrativo.',impact:'Alto',proc:['Governance & Org','Sistema dei controlli']},
+    {id:'REQ-IT-02',title:'Registro incidenti + notifica 72h',desc:'Istituzione di un registro degli incidenti cyber e processo di notifica entro 72 ore all\'autorità.',impact:'Alto',proc:['IT Risk','Incident Mgmt','Compliance']},
+    {id:'REQ-IT-03',title:'Vulnerability test annuale',desc:'Test di vulnerabilità periodici sui sistemi critici e tracciamento delle remediation.',impact:'Medio',proc:['IT Security','Internal Audit']},
+    {id:'REQ-IT-04',title:'Aggiornamento policy outsourcing cloud',desc:'Revisione delle policy di esternalizzazione dei servizi cloud secondo i nuovi criteri.',impact:'Medio',proc:['Outsourcing','Procurement']}
+  ],
+  [
+    {id:'REQ-ESG-01',title:'Stress test climatici in ORSA',desc:'Inclusione di scenari di rischio fisico e di transizione nella valutazione interna ORSA.',impact:'Alto',proc:['ORSA','Risk Modelling']},
+    {id:'REQ-ESG-02',title:'Materialità rischi ESG',desc:'Documentazione e valutazione della materialità dei fattori di sostenibilità.',impact:'Alto',proc:['Risk Mgmt','Reporting SFCR']},
+    {id:'REQ-ESG-03',title:'Metriche esposizione transizione',desc:'Definizione di indicatori di esposizione al rischio di transizione sul portafoglio investimenti.',impact:'Medio',proc:['Investimenti','RAF']}
+  ],
+  [
+    {id:'REQ-ORSA-01',title:'Orizzonte proiezione 3 anni',desc:'Adozione di un orizzonte minimo triennale per le proiezioni forward-looking.',impact:'Medio',proc:['ORSA','Pianificazione']},
+    {id:'REQ-ORSA-02',title:'Minimo 3 scenari avversi',desc:'Integrazione di almeno tre scenari di stress coerenti col piano strategico.',impact:'Alto',proc:['Risk Modelling','Capital Mgmt']},
+    {id:'REQ-ORSA-03',title:'Coinvolgimento CdA documentato',desc:'Evidenza formale del coinvolgimento dell\'organo amministrativo nelle ipotesi.',impact:'Alto',proc:['Governance','ORSA']}
+  ]
+];
+const impactBadge=i=>({'Alto':'b-red','Medio':'b-amber','Basso':'b-green'}[i]);
+document.querySelectorAll('.chip').forEach(c=>c.addEventListener('click',()=>{
+  document.getElementById('nlpInput').value=samples[c.dataset.sample];
+}));
+document.getElementById('nlpBtn').addEventListener('click',()=>{
+  const val=document.getElementById('nlpInput').value.trim();
+  const out=document.getElementById('nlpOut');
+  if(!val){out.innerHTML='<p class="note">⚠️ Incolla un testo o seleziona un esempio per avviare l\'analisi.</p>';return;}
+  // match sample, else default to first
+  let idx=samples.findIndex(s=>s===val);
+  if(idx<0){idx=val.toLowerCase().includes('clim')||val.toLowerCase().includes('esg')?1:val.toLowerCase().includes('orsa')?2:0;}
+  out.innerHTML='<div class="card"><div class="scanline"></div><div class="loading" style="margin-top:12px"><span class="spin"></span> Estrazione requisiti, classificazione impatto e mappatura sui processi interni…</div></div>';
+  setTimeout(()=>{
+    const reqs=analyses[idx];
+    out.innerHTML=`<div class="card" style="margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+      <div><div class="kpi-label">Esito analisi NLP</div><div style="font-family:var(--serif);font-size:20px;font-weight:600;margin-top:2px">${reqs.length} requisiti d'impatto estratti</div></div>
+      <div style="display:flex;gap:8px"><span class="badge b-red">● ${reqs.filter(r=>r.impact==='Alto').length} Alto</span><span class="badge b-amber">● ${reqs.filter(r=>r.impact==='Medio').length} Medio</span></div>
+    </div>`+
+    reqs.map(r=>`<div class="req-card">
+      <div class="req-top"><span class="req-id">${r.id}</span><span class="badge ${impactBadge(r.impact)}">Impatto ${r.impact}</span></div>
+      <h4>${r.title}</h4><p>${r.desc}</p>
+      <div class="map"><span class="tag">Mappato su:</span><span class="arrow">→</span>${r.proc.map(p=>`<span class="tag hit">${p}</span>`).join('')}</div>
+    </div>`).join('');
+    out.querySelectorAll('.req-card').forEach((c,i)=>setTimeout(()=>c.classList.add('in'),i*140));
+  },1500);
+});
+</script>
+</body>
+</html>
